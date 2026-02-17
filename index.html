@@ -115,6 +115,29 @@ button[disabled] { opacity: 0.5; cursor: not-allowed; }
 .section { margin-bottom: 14px; }
 .section h3 { margin: 0 0 8px; font-size: 16px; }
 .submit { width: 100%; margin-top: 10px; padding: 14px; font-size: 18px; }
+.mobile-quiz { display: none; }
+.compact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.compact-field label {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.compact-field select {
+  width: 100%;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid #baa983;
+  background: #fffef8;
+  color: var(--ink);
+  font-size: 14px;
+  font-family: inherit;
+}
 @media (max-width: 620px) {
   body { padding: 10px; }
   .card { padding: 14px; border-radius: 14px; }
@@ -133,6 +156,18 @@ button[disabled] { opacity: 0.5; cursor: not-allowed; }
     padding-bottom: 2px;
     border-top: 1px solid var(--line);
     margin-top: 12px;
+  }
+  .section { display: none; }
+  .mobile-quiz { display: block; }
+  .hebrew { font-size: clamp(34px, 9vw, 52px); margin: 8px 0 6px; }
+  .confirmation { min-height: 48px; font-size: 18px; padding: 9px; }
+  .feedback { margin-bottom: 8px; min-height: 18px; }
+  .submit {
+    position: sticky;
+    bottom: 0;
+    margin-top: 6px;
+    padding: 12px;
+    border-radius: 12px;
   }
 }
 </style>
@@ -166,6 +201,16 @@ button[disabled] { opacity: 0.5; cursor: not-allowed; }
     <div id="hebrew" class="hebrew"></div>
     <div id="confirmation" class="confirmation">-</div>
     <div id="feedback" class="feedback"></div>
+
+    <div class="mobile-quiz" id="mobileQuiz">
+      <div class="compact-grid">
+        <div class="compact-field"><label for="mobileStem">Stem</label><select id="mobileStem"></select></div>
+        <div class="compact-field"><label for="mobileAspect">Aspect</label><select id="mobileAspect"></select></div>
+        <div class="compact-field"><label for="mobilePerson">Person</label><select id="mobilePerson"></select></div>
+        <div class="compact-field"><label for="mobileGender">Gender</label><select id="mobileGender"></select></div>
+        <div class="compact-field"><label for="mobileNumber">Number</label><select id="mobileNumber"></select></div>
+      </div>
+    </div>
 
     <div class="section"><h3>Stem</h3><div class="chips" id="stem"></div></div>
     <div class="section"><h3>Aspect</h3><div class="chips" id="aspect"></div></div>
@@ -514,12 +559,37 @@ function renderAnswerButtons(type, values) {
   });
 }
 
+function renderMobileSelect(type, values, selectId) {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+  select.innerHTML = "";
+
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "Select";
+  select.appendChild(placeholder);
+
+  values.forEach(value => {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = value;
+    select.appendChild(option);
+  });
+
+  select.value = app.answer[type] || "";
+}
+
 function renderQuizOptions() {
   renderAnswerButtons("stem", app.options.stem);
   renderAnswerButtons("aspect", app.options.aspect);
   renderAnswerButtons("person", ["1", "2", "3"]);
   renderAnswerButtons("gender", ["Masculine", "Feminine", "Common"]);
   renderAnswerButtons("number", ["Singular", "Plural"]);
+  renderMobileSelect("stem", app.options.stem, "mobileStem");
+  renderMobileSelect("aspect", app.options.aspect, "mobileAspect");
+  renderMobileSelect("person", ["1", "2", "3"], "mobilePerson");
+  renderMobileSelect("gender", ["Masculine", "Feminine", "Common"], "mobileGender");
+  renderMobileSelect("number", ["Singular", "Plural"], "mobileNumber");
 }
 
 function updateConfirmation() {
@@ -614,6 +684,23 @@ function showSetup() {
 }
 
 function wireEvents() {
+  const mobileMap = {
+    mobileStem: "stem",
+    mobileAspect: "aspect",
+    mobilePerson: "person",
+    mobileGender: "gender",
+    mobileNumber: "number"
+  };
+  Object.entries(mobileMap).forEach(([id, key]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.onchange = () => {
+      app.answer[key] = el.value || null;
+      updateConfirmation();
+      renderQuizOptions();
+    };
+  });
+
   document.getElementById("backBtn").onclick = () => {
     if (app.wizardStep > 0) {
       app.wizardStep -= 1;
