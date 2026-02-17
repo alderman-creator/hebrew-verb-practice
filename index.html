@@ -116,8 +116,24 @@ button[disabled] { opacity: 0.5; cursor: not-allowed; }
 .section h3 { margin: 0 0 8px; font-size: 16px; }
 .submit { width: 100%; margin-top: 10px; padding: 14px; font-size: 18px; }
 @media (max-width: 620px) {
-  h1 { font-size: 28px; }
-  .question { font-size: 22px; }
+  body { padding: 10px; }
+  .card { padding: 14px; border-radius: 14px; }
+  h1 { font-size: 24px; margin: 2px 0 8px; }
+  .question { font-size: 20px; margin: 6px 0 10px; }
+  .chips { gap: 8px; }
+  button { padding: 8px 10px; font-size: 14px; }
+  .toolbar { margin-bottom: 6px; }
+  #wizardSummary { display: none; }
+  #wizardNote { margin-top: 6px; min-height: 18px; font-size: 13px; }
+  .nav {
+    position: sticky;
+    bottom: 0;
+    background: var(--card);
+    padding-top: 8px;
+    padding-bottom: 2px;
+    border-top: 1px solid var(--line);
+    margin-top: 12px;
+  }
 }
 </style>
 </head>
@@ -175,7 +191,6 @@ const ROOT_LABELS = {
 const STEM_ORDER = ["Qal", "Niphal", "Piel", "Pual", "Hiphil", "Hophal", "Hitpael"];
 const ASPECT_ORDER = ["Perfect", "Imperfect", "Imperative", "Cohortative", "Jussive", "Infinitive", "Participle"];
 const ROOT_ORDER = ["strong", "i_nun", "i_wy", "hollow_ii_wy", "iii_he", "other_weak"];
-const SETUP_STORAGE_KEY = "hebrew_practice_setup_v1";
 
 const app = {
   allRecords: [],
@@ -365,34 +380,6 @@ function setDataStatus(message) {
   void message;
 }
 
-function saveSetupSelection() {
-  try {
-    localStorage.setItem(SETUP_STORAGE_KEY, JSON.stringify({
-      stem: Array.from(app.wizardSelection.stem),
-      aspect: Array.from(app.wizardSelection.aspect),
-      verbType: Array.from(app.wizardSelection.verbType)
-    }));
-  } catch (_) {}
-}
-
-function loadSetupSelection() {
-  try {
-    const raw = localStorage.getItem(SETUP_STORAGE_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch (_) {
-    return null;
-  }
-}
-
-function pickSavedSet(savedValue, choices) {
-  if (typeof savedValue === "string") {
-    return choices.includes(savedValue) ? new Set([savedValue]) : new Set();
-  }
-  if (!Array.isArray(savedValue)) return new Set();
-  return new Set(savedValue.filter(v => choices.includes(v)));
-}
-
 function applyDataset(data, sourceLabel) {
   const allowedStems = new Set(STEM_ORDER);
   const parsed = buildRecords(data).filter(r => allowedStems.has(r.stem));
@@ -402,13 +389,10 @@ function applyDataset(data, sourceLabel) {
   app.options.aspect = orderedExisting(ASPECT_ORDER, app.allRecords.map(r => r.aspect));
   app.options.verbType = orderedExisting(ROOT_ORDER, app.allRecords.map(r => r.verbType));
 
-  const saved = loadSetupSelection() || {};
-  app.wizardSelection.stem = pickSavedSet(saved.stem, app.options.stem);
-  app.wizardSelection.aspect = pickSavedSet(saved.aspect, app.options.aspect);
-  app.wizardSelection.verbType = pickSavedSet(saved.verbType, app.options.verbType);
-  if (app.wizardSelection.stem.size === 0) app.wizardSelection.stem = new Set(app.options.stem);
-  if (app.wizardSelection.aspect.size === 0) app.wizardSelection.aspect = new Set(app.options.aspect);
-  if (app.wizardSelection.verbType.size === 0) app.wizardSelection.verbType = new Set(app.options.verbType);
+  // Start with nothing selected so users explicitly choose filters.
+  app.wizardSelection.stem = new Set();
+  app.wizardSelection.aspect = new Set();
+  app.wizardSelection.verbType = new Set();
   app.wizardStep = 0;
   app.dataReady = true;
   setDataStatus(`Loaded ${app.allRecords.length} forms from ${sourceLabel}.`);
@@ -467,7 +451,6 @@ function renderWizard() {
     btn.onclick = () => {
       if (app.wizardSelection[step.key].has(value)) app.wizardSelection[step.key].delete(value);
       else app.wizardSelection[step.key].add(value);
-      saveSetupSelection();
       renderWizard();
     };
     optionsEl.appendChild(btn);
@@ -475,12 +458,10 @@ function renderWizard() {
 
   document.getElementById("wizardSelectAllBtn").onclick = () => {
     app.wizardSelection[step.key] = new Set(step.values);
-    saveSetupSelection();
     renderWizard();
   };
   document.getElementById("wizardClearBtn").onclick = () => {
     app.wizardSelection[step.key] = new Set();
-    saveSetupSelection();
     renderWizard();
   };
 
