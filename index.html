@@ -90,6 +90,19 @@ button[disabled] { opacity: 0.5; cursor: not-allowed; }
   color: #4d473b;
 }
 .toolbar { display: flex; justify-content: space-between; gap: 10px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+.quiz-exit-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 4px;
+}
+.quiz-exit {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 999px;
+  font-size: 22px;
+  line-height: 1;
+}
 .hebrew {
   font-size: clamp(44px, 10vw, 78px);
   text-align: center;
@@ -138,29 +151,8 @@ button[disabled] { opacity: 0.5; cursor: not-allowed; }
   .hebrew { font-size: clamp(34px, 9vw, 52px); margin: 8px 0 6px; }
   .confirmation { min-height: 48px; font-size: 18px; padding: 9px; }
   .feedback { margin-bottom: 8px; min-height: 18px; }
-  #quizView.card {
-    display: flex;
-    flex-direction: column;
-  }
-  #quizView .toolbar {
-    order: 40;
-    margin-top: 8px;
-    margin-bottom: 0;
-    padding-top: 8px;
-    border-top: 1px solid var(--line);
-  }
-  #quizView #changeSetupBtn {
-    padding: 6px 10px;
-    font-size: 13px;
-  }
-  #quizView #deckMeta {
-    gap: 6px;
-    margin-top: 0;
-  }
-  #quizView #deckMeta span {
-    font-size: 11px;
-    padding: 4px 7px;
-  }
+  .quiz-exit-row { margin-bottom: 2px; }
+  .quiz-exit { width: 30px; height: 30px; font-size: 20px; }
   .section { display: block; margin-bottom: 8px; }
   .section h3 { font-size: 13px; margin: 0 0 4px; }
   #stem button, #aspect button, #person button, #gender button, #number button {
@@ -201,12 +193,11 @@ button[disabled] { opacity: 0.5; cursor: not-allowed; }
   </section>
 
   <section id="quizView" class="card hidden">
-    <div class="toolbar">
-      <button id="changeSetupBtn" type="button">Change Setup</button>
-      <div id="deckMeta" class="kv"></div>
+    <div class="quiz-exit-row">
+      <button id="changeSetupBtn" class="quiz-exit" type="button" aria-label="Back to setup">×</button>
     </div>
 
-      <div id="hebrew" class="hebrew"></div>
+    <div id="hebrew" class="hebrew"></div>
       <div id="confirmation" class="confirmation">-</div>
       <div id="feedback" class="feedback"></div>
 
@@ -586,19 +577,6 @@ function loadCurrentVerb() {
   app.answer = { stem: null, aspect: null, person: null, gender: null, number: null };
   updateConfirmation();
   renderQuizOptions();
-
-  const deckMeta = document.getElementById("deckMeta");
-  deckMeta.innerHTML = "";
-  const tags = [
-    `Set: ${app.deck.length}`,
-    `Item: ${app.index + 1}/${app.deck.length}`,
-    `Type: ${ROOT_LABELS[record.verbType] || record.verbType}`
-  ];
-  tags.forEach(t => {
-    const el = document.createElement("span");
-    el.textContent = t;
-    deckMeta.appendChild(el);
-  });
 }
 
 function submitAnswer() {
